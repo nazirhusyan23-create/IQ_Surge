@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">IQ Surge</string>
+    <string name="title_activity_main">IQ Surge</string>
+    <string name="package_name">com.iqsurge.app</string>
+    <string name="custom_url_scheme">com.iqsurge.app</string>
+</resources>

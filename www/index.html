@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+<meta name="format-detection" content="telephone=no">
+<meta name="theme-color" content="#0f0f1a">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' data: gap: https://ssl.gstatic.com 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; media-src *; img-src 'self' data: content:;">
+<title>IQ Surge</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="app">
+
+  <!-- START SCREEN -->
+  <div class="screen active" id="start-screen">
+    <h1>🧠 IQ Surge</h1>
+    <p class="subtitle">An endless adaptive IQ challenge. Questions are generated on the fly and get harder every level. You have 3 lives — how far can you go?</p>
+    <div class="cat-grid">
+      <div class="cat-card"><div class="icon">🔢</div><div class="label">Math Puzzles</div></div>
+      <div class="cat-card"><div class="icon">📈</div><div class="label">Number Series</div></div>
+      <div class="cat-card"><div class="icon">🧩</div><div class="label">Logic Deduction</div></div>
+      <div class="cat-card"><div class="icon">♾️</div><div class="label">Infinite Levels</div></div>
+    </div>
+    <button class="btn" id="start-btn">Start Test</button>
+  </div>
+
+  <!-- QUIZ SCREEN -->
+  <div class="screen" id="quiz-screen">
+    <div class="top-bar">
+      <div class="group">
+        <span class="level-badge" id="level-badge">Level 1</span>
+        <span class="lives" id="lives"></span>
+        <span class="streak-badge" id="streak-badge">🔥 0</span>
+      </div>
+      <span class="timer" id="timer">⏱ 20s</span>
+    </div>
+    <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+    <div class="live-tier" id="live-tier">Estimated IQ: <b>100</b> · Average</div>
+    <span class="tag" id="question-tag">Logic</span>
+    <div class="question" id="question-text"></div>
+    <div class="options" id="options-container"></div>
+  </div>
+
+  <!-- RESULT SCREEN -->
+  <div class="screen" id="result-screen">
+    <h1>Game Over</h1>
+    <div class="result-score">
+      <div class="num" id="iq-score">100</div>
+      <div class="label">Estimated IQ Score</div>
+    </div>
+    <div class="result-tier" id="result-tier">Average</div>
+    <p class="result-desc" id="result-desc"></p>
+    <div class="stats-grid">
+      <div class="stat-box"><div class="val" id="stat-level">1</div><div class="lbl">Level Reached</div></div>
+      <div class="stat-box"><div class="val" id="stat-streak">0</div><div class="lbl">Best Streak</div></div>
+      <div class="stat-box"><div class="val" id="stat-accuracy">0%</div><div class="lbl">Accuracy</div></div>
+    </div>
+    <button class="btn" id="retry-btn">Play Again</button>
+  </div>
+
+</div>
+
+<!-- Visible only when no native AdMob plugin is present (desktop browser testing) -->
+<div class="fallback-banner" id="fallback-banner" style="display:none;">
+  AdMob Banner Placeholder (ca-app-pub-9502060049942116/2608546109)
+</div>
+
+<script src="js/app.js"></script>
+</body>
+</html>

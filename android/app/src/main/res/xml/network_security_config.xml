@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!-- Default policy: only trust the system CA store and require HTTPS.
+         This keeps the app store-compliant (Google Play & Amazon Appstore
+         both flag apps that allow arbitrary cleartext traffic). -->
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+
+    <!-- The game itself is served from the local WebView asset bundle
+         (https://localhost via the Capacitor bridge), so no additional
+         cleartext domain exceptions are required out of the box.
+         If you later add a remote API, add a <domain-config> block here,
+         e.g.:
+
+    <domain-config cleartextTrafficPermitted="false">
+        <domain includeSubdomains="true">api.example.com</domain>
+    </domain-config>
+    -->
+</network-security-config>
