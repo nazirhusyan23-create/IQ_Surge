@@ -1,0 +1,123 @@
+name: Android Release Build
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch: {}
+
+jobs:
+  build:
+    name: Build Release APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install web/Capacitor dependencies
+        run: npm install
+
+      - name: Sync Capacitor Android platform
+        run: npx cap sync android
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.14.3'
+
+      - name: Generate/restore Gradle wrapper
+        working-directory: android
+        run: gradle wrapper --gradle-version 8.14.3
+
+      - name: Make gradlew executable
+        run: chmod +x android/gradlew
+
+      # ------------------------------------------------------------------
+      # Signing: if you've added the ANDROID_KEYSTORE_BASE64 /
+      # ANDROID_KEYSTORE_PASSWORD / ANDROID_KEY_ALIAS / ANDROID_KEY_PASSWORD
+      # secrets to this repo's Settings > Secrets and variables > Actions,
+      # those are used to sign the release build with YOUR real production
+      # key. Otherwise, a throwaway keystore is generated on the fly so the
+      # workflow still produces a signed, installable APK for testing.
+      # NEVER commit a real production keystore to source control.
+      # ------------------------------------------------------------------
+      - name: Configure signing (secrets, if provided)
+        if: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
+        working-directory: android
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > release.keystore
+          cat > keystore.properties <<EOF
+          storeFile=release.keystore
+          storePassword=${ANDROID_KEYSTORE_PASSWORD}
+          keyAlias=${ANDROID_KEY_ALIAS}
+          keyPassword=${ANDROID_KEY_PASSWORD}
+          EOF
+
+      - name: Configure signing (throwaway keystore fallback)
+        if: ${{ secrets.ANDROID_KEYSTORE_BASE64 == '' }}
+        working-directory: android
+        run: |
+          if [ ! -f keystore.properties ]; then
+            keytool -genkeypair -v \
+              -keystore release.keystore \
+              -alias iqsurge \
+              -keyalg RSA -keysize 2048 -validity 10000 \
+              -storepass "changeit123" -keypass "changeit123" \
+              -dname "CN=IQ Surge CI, OU=Dev, O=IQ Surge, L=City, S=State, C=US"
+            cat > keystore.properties <<EOF
+          storeFile=release.keystore
+          storePassword=changeit123
+          keyAlias=iqsurge
+          keyPassword=changeit123
+          EOF
+            echo "NOTE: signed with an auto-generated CI-only keystore. Add the ANDROID_KEYSTORE_BASE64 secret (see README) to sign with your own production key instead."
+          fi
+
+      - name: Build release APK
+        working-directory: android
+        run: ./gradlew assembleRelease --stacktrace
+
+      - name: Build debug APK
+        working-directory: android
+        run: ./gradlew assembleDebug --stacktrace
+
+      - name: Locate APKs
+        id: apk
+        run: |
+          echo "release_path=$(find android/app/build/outputs/apk/release -name '*.apk' | head -n 1)" >> "$GITHUB_OUTPUT"
+          echo "debug_path=$(find android/app/build/outputs/apk/debug -name '*.apk' | head -n 1)" >> "$GITHUB_OUTPUT"
+
+      - name: Upload release APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: iq-surge-release-apk
+          path: ${{ steps.apk.outputs.release_path }}
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Upload debug APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: iq-surge-debug-apk
+          path: ${{ steps.apk.outputs.debug_path }}
+          if-no-files-found: error
+          retention-days: 30
