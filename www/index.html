@@ -5,9 +5,16 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
 <meta name="format-detection" content="telephone=no">
 <meta name="theme-color" content="#0f0f1a">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self' data: gap: https://ssl.gstatic.com 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; media-src *; img-src 'self' data: content:;">
+
+<!-- CSP Updated to allow Google Ads scripts and connections -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' data: gap: https://ssl.gstatic.com https://*.pagead2.googlesyndication.com https://*.google.com https://*.googlesyndication.com https://*.doubleclick.net 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; media-src *; img-src 'self' data: content: https:;">
+
 <title>IQ Surge</title>
 <link rel="stylesheet" href="css/style.css">
+
+<!-- Google AdMob / AdSense Web Script -->
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-app-pub-9502060049942116"
+     crossorigin="anonymous"></script>
 </head>
 <body>
 
@@ -62,9 +69,17 @@
 
 </div>
 
-<!-- Visible only when no native AdMob plugin is present (desktop browser testing) -->
-<div class="fallback-banner" id="fallback-banner" style="display:none;">
-  AdMob Banner Placeholder (ca-app-pub-9502060049942116/2608546109)
+<!-- Real Google AdMob Banner Container -->
+<div style="position: fixed; bottom: 0; left: 0; width: 100%; z-index: 9999; text-align: center; background-color: #0f0f1a;">
+  <ins class="adsbygoogle"
+       style="display:block;"
+       data-ad-client="ca-app-pub-9502060049942116"
+       data-ad-slot="2608546109"
+       data-ad-format="horizontal"
+       data-full-width-responsive="true"></ins>
+  <script>
+       (adsbygoogle = window.adsbygoogle || []).push({});
+  </script>
 </div>
 
 <script src="js/app.js"></script>
