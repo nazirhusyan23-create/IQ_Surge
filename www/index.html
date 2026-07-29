@@ -1,87 +1,465 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
-<meta name="format-detection" content="telephone=no">
-<meta name="theme-color" content="#0f0f1a">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>IQ Surge</title>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --accent-color: #6366f1;
+            --accent-hover: #4f46e5;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --success-color: #22c55e;
+            --danger-color: #ef4444;
+            --warning-color: #f59e0b;
+        }
 
-<!-- CSP Updated to allow Google Ads scripts and connections -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self' data: gap: https://ssl.gstatic.com https://*.pagead2.googlesyndication.com https://*.google.com https://*.googlesyndication.com https://*.doubleclick.net 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; media-src *; img-src 'self' data: content: https:;">
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+        }
 
-<title>IQ Surge</title>
-<link rel="stylesheet" href="css/style.css">
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            overflow-x: hidden;
+            padding-bottom: 60px; /* Space reserved for bottom native banner ad */
+        }
 
-<!-- Google AdMob / AdSense Web Script -->
-<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-app-pub-9502060049942116"
-     crossorigin="anonymous"></script>
+        .container {
+            width: 100%;
+            max-width: 500px;
+            margin: 0 auto;
+            padding: 20px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .screen {
+            display: none;
+            flex-direction: column;
+            flex: 1;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        .screen.active {
+            display: flex;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* HEADER */
+        .app-header {
+            text-align: center;
+            margin-bottom: 24px;
+            padding-top: 10px;
+        }
+
+        .app-title {
+            font-size: 2.2rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #818cf8, #c084fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.5px;
+        }
+
+        .app-subtitle {
+            font-size: 0.95rem;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+
+        /* CARD & PANELS */
+        .card {
+            background-color: var(--card-bg);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 16px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        /* START SCREEN */
+        .categories-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .cat-card {
+            background-color: var(--card-bg);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 16px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            cursor: pointer;
+            transition: transform 0.15s ease, border-color 0.15s ease;
+        }
+
+        .cat-card:active {
+            transform: scale(0.98);
+            border-color: var(--accent-color);
+        }
+
+        .cat-icon {
+            font-size: 1.8rem;
+        }
+
+        .cat-info h3 {
+            font-size: 1.1rem;
+            margin-bottom: 2px;
+        }
+
+        .cat-info p {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        /* QUIZ SCREEN */
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .badge {
+            background: rgba(255, 255, 255, 0.08);
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .lives {
+            display: flex;
+            gap: 4px;
+            font-size: 1.2rem;
+        }
+
+        .lives span.lost {
+            opacity: 0.2;
+            filter: grayscale(100%);
+        }
+
+        .timer-bar {
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--accent-color);
+            width: 100%;
+            transition: width 0.1s linear;
+        }
+
+        .timer-text {
+            font-weight: 700;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        .timer-text.warn {
+            color: var(--danger-color);
+        }
+
+        .question-tag {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--accent-color);
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .question-text {
+            font-size: 1.25rem;
+            font-weight: 600;
+            line-height: 1.4;
+            min-height: 60px;
+        }
+
+        .options-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: auto;
+        }
+
+        .option {
+            background: var(--card-bg);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 14px 18px;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            transition: background 0.15s ease, border-color 0.15s ease;
+        }
+
+        .option .letter {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.08);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.85rem;
+            font-weight: 700;
+        }
+
+        .option.correct {
+            background: rgba(34, 197, 94, 0.2);
+            border-color: var(--success-color);
+        }
+
+        .option.wrong {
+            background: rgba(239, 68, 68, 0.2);
+            border-color: var(--danger-color);
+        }
+
+        .option.disabled {
+            pointer-events: none;
+        }
+
+        .live-tier {
+            text-align: center;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-top: 16px;
+        }
+
+        /* RESULT SCREEN */
+        .result-card {
+            text-align: center;
+            padding: 32px 20px;
+        }
+
+        .score-circle {
+            width: 130px;
+            height: 130px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent-color), #818cf8);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            box-shadow: 0 10px 25px rgba(99, 102, 241, 0.4);
+        }
+
+        .score-number {
+            font-size: 2.8rem;
+            font-weight: 800;
+            line-height: 1;
+        }
+
+        .score-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            opacity: 0.9;
+        }
+
+        .result-tier-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .result-desc {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            line-height: 1.5;
+            margin-bottom: 24px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-bottom: 24px;
+        }
+
+        .stat-box {
+            background: rgba(255, 255, 255, 0.04);
+            border-radius: 8px;
+            padding: 10px;
+            text-align: center;
+        }
+
+        .stat-val {
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+
+        .stat-lbl {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+        }
+
+        /* BUTTONS */
+        .btn {
+            background-color: var(--accent-color);
+            color: #ffffff;
+            border: none;
+            border-radius: 12px;
+            padding: 16px;
+            font-size: 1rem;
+            font-weight: 700;
+            width: 100%;
+            cursor: pointer;
+            box-shadow: 0 4px 14px rgba(99, 102, 241, 0.4);
+            transition: background 0.15s ease;
+        }
+
+        .btn:active {
+            background-color: var(--accent-hover);
+            transform: scale(0.99);
+        }
+
+        /* BROWSER FALLBACK BANNER PLACEHOLDER */
+        #fallback-banner {
+            display: none;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 50px;
+            background: #1e1e24;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            z-index: 9999;
+        }
+    </style>
 </head>
 <body>
 
-<div class="app">
+    <div class="container">
+        <!-- START SCREEN -->
+        <div id="start-screen" class="screen active">
+            <div class="app-header">
+                <h1 class="app-title">IQ Surge</h1>
+                <p class="app-subtitle">Adaptive Intelligence Assessment</p>
+            </div>
 
-  <!-- START SCREEN -->
-  <div class="screen active" id="start-screen">
-    <h1>🧠 IQ Surge</h1>
-    <p class="subtitle">An endless adaptive IQ challenge. Questions are generated on the fly and get harder every level. You have 3 lives — how far can you go?</p>
-    <div class="cat-grid">
-      <div class="cat-card"><div class="icon">🔢</div><div class="label">Math Puzzles</div></div>
-      <div class="cat-card"><div class="icon">📈</div><div class="label">Number Series</div></div>
-      <div class="cat-card"><div class="icon">🧩</div><div class="label">Logic Deduction</div></div>
-      <div class="cat-card"><div class="icon">♾️</div><div class="label">Infinite Levels</div></div>
+            <div class="categories-grid">
+                <div class="cat-card">
+                    <div class="cat-icon">🧩</div>
+                    <div class="cat-info">
+                        <h3>Math Puzzles</h3>
+                        <p>Equations, balancing & missing operators</p>
+                    </div>
+                </div>
+                <div class="cat-card">
+                    <div class="cat-icon">📈</div>
+                    <div class="cat-info">
+                        <h3>Number Series</h3>
+                        <p>Linear, geometric & quadratic patterns</p>
+                    </div>
+                </div>
+                <div class="cat-card">
+                    <div class="cat-icon">🔍</div>
+                    <div class="cat-info">
+                        <h3>Logical Deduction</h3>
+                        <p>Relational chains & transitive reasoning</p>
+                    </div>
+                </div>
+            </div>
+
+            <button id="start-btn" class="btn" style="margin-top: auto;">Start Test</button>
+        </div>
+
+        <!-- QUIZ SCREEN -->
+        <div id="quiz-screen" class="screen">
+            <div class="top-bar">
+                <span id="level-badge" class="badge">Level 1</span>
+                <span id="timer" class="timer-text">⏱ 20s</span>
+                <span id="streak-badge" class="badge">🔥 0</span>
+                <div id="lives" class="lives"></div>
+            </div>
+
+            <div class="timer-bar">
+                <div id="progress-fill" class="progress-fill"></div>
+            </div>
+
+            <div class="card">
+                <div id="question-tag" class="question-tag">Category</div>
+                <div id="question-text" class="question-text">Question content will load here...</div>
+            </div>
+
+            <div id="options-container" class="options-container"></div>
+
+            <div id="live-tier" class="live-tier">Estimated IQ: <b>100</b> · Average</div>
+        </div>
+
+        <!-- RESULT SCREEN -->
+        <div id="result-screen" class="screen">
+            <div class="card result-card">
+                <div class="score-circle">
+                    <span id="iq-score" class="score-number">100</span>
+                    <span class="score-label">IQ Score</span>
+                </div>
+                <h2 id="result-tier" class="result-tier-title">Average</h2>
+                <p id="result-desc" class="result-desc">Your evaluation description will appear here.</p>
+
+                <div class="stats-grid">
+                    <div class="stat-box">
+                        <div id="stat-level" class="stat-val">0</div>
+                        <div class="stat-lbl">Level</div>
+                    </div>
+                    <div class="stat-box">
+                        <div id="stat-streak" class="stat-val">0</div>
+                        <div class="stat-lbl">Best Streak</div>
+                    </div>
+                    <div class="stat-box">
+                        <div id="stat-accuracy" class="stat-val">0%</div>
+                        <div class="stat-lbl">Accuracy</div>
+                    </div>
+                </div>
+
+                <button id="retry-btn" class="btn">Try Again</button>
+            </div>
+        </div>
     </div>
-    <button class="btn" id="start-btn">Start Test</button>
-  </div>
 
-  <!-- QUIZ SCREEN -->
-  <div class="screen" id="quiz-screen">
-    <div class="top-bar">
-      <div class="group">
-        <span class="level-badge" id="level-badge">Level 1</span>
-        <span class="lives" id="lives"></span>
-        <span class="streak-badge" id="streak-badge">🔥 0</span>
-      </div>
-      <span class="timer" id="timer">⏱ 20s</span>
-    </div>
-    <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
-    <div class="live-tier" id="live-tier">Estimated IQ: <b>100</b> · Average</div>
-    <span class="tag" id="question-tag">Logic</span>
-    <div class="question" id="question-text"></div>
-    <div class="options" id="options-container"></div>
-  </div>
+    <!-- Fallback container for browser testing -->
+    <div id="fallback-banner">AdMob Banner Preview (Native Ad loads on APK)</div>
 
-  <!-- RESULT SCREEN -->
-  <div class="screen" id="result-screen">
-    <h1>Game Over</h1>
-    <div class="result-score">
-      <div class="num" id="iq-score">100</div>
-      <div class="label">Estimated IQ Score</div>
-    </div>
-    <div class="result-tier" id="result-tier">Average</div>
-    <p class="result-desc" id="result-desc"></p>
-    <div class="stats-grid">
-      <div class="stat-box"><div class="val" id="stat-level">1</div><div class="lbl">Level Reached</div></div>
-      <div class="stat-box"><div class="val" id="stat-streak">0</div><div class="lbl">Best Streak</div></div>
-      <div class="stat-box"><div class="val" id="stat-accuracy">0%</div><div class="lbl">Accuracy</div></div>
-    </div>
-    <button class="btn" id="retry-btn">Play Again</button>
-  </div>
-
-</div>
-
-<!-- Real Google AdMob Banner Container -->
-<div style="position: fixed; bottom: 0; left: 0; width: 100%; z-index: 9999; text-align: center; background-color: #0f0f1a;">
-  <ins class="adsbygoogle"
-       style="display:block;"
-       data-ad-client="ca-app-pub-9502060049942116"
-       data-ad-slot="2608546109"
-       data-ad-format="horizontal"
-       data-full-width-responsive="true"></ins>
-  <script>
-       (adsbygoogle = window.adsbygoogle || []).push({});
-  </script>
-</div>
-
-<script src="js/app.js"></script>
+    <!-- Capacitor / Cordova Scripts -->
+    <script src="cordova.js"></script>
+    <script src="js/app.js"></script>
 </body>
 </html>
