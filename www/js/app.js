@@ -1,56 +1,47 @@
 /* =========================================================================
-   ADMOB INTEGRATION
-   Compatible with the "admob-plus" (Capacitor/Cordova) plugin, which exposes
-   a global `admob` object at runtime inside the native WebView. On a normal
-   desktop/mobile browser (no native bridge) that object won't exist, so
-   every call is wrapped and silently no-ops instead of throwing.
-
-   To wire this up in a real build:
-     Capacitor:  npm install admob-plus-cordova admob-plus-capacitor
-                 npx cap sync
-     Cordova:    cordova plugin add admob-plus-cordova
+   ADMOB INTEGRATION (Capacitor Native AdMob Support)
    ========================================================================= */
 const AdManager = (function() {
   const BANNER_ID = 'ca-app-pub-9502060049942116/2608546109';
   const INTERSTITIAL_ID = 'ca-app-pub-9502060049942116/6814430138';
 
   let ready = false;
-  let interstitialLoaded = false;
-  let interstitial = null;
 
-  function isNativeAvailable() {
-    // admob-plus attaches `window.admob` once the native bridge is ready.
-    return typeof window !== 'undefined' && !!window.admob;
+  function getAdMobPlugin() {
+    if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.AdMob) {
+      return window.Capacitor.Plugins.AdMob;
+    }
+    return null;
   }
 
   async function initialize() {
-    if (!isNativeAvailable()) {
-      console.log('[AdMob] Native plugin not detected — running in browser fallback mode.');
-      document.getElementById('fallback-banner').style.display = 'flex';
-      ready = false;
+    const AdMob = getAdMobPlugin();
+    if (!AdMob) {
+      console.log('[AdMob] Native Capacitor AdMob plugin not detected.');
       return;
     }
     try {
-      await window.admob.start();
+      await AdMob.initialize();
       ready = true;
       console.log('[AdMob] Initialized.');
       await showBanner();
-      await loadInterstitial();
+      await prepareInterstitial();
     } catch (err) {
       console.warn('[AdMob] Initialize failed:', err);
-      document.getElementById('fallback-banner').style.display = 'flex';
     }
   }
 
   async function showBanner() {
-    if (!isNativeAvailable() || !ready) return;
+    const AdMob = getAdMobPlugin();
+    if (!AdMob || !ready) return;
     try {
-      const banner = new window.admob.BannerAd({
-        adUnitId: BANNER_ID,
-        position: window.admob.BannerAdPosition.BOTTOM_CENTER,
-        size: window.admob.BannerAdSize.BANNER
+      await AdMob.showBanner({
+        adId: BANNER_ID,
+        adSize: 'BANNER',
+        position: 'BOTTOM_CENTER',
+        margin: 0,
+        isTesting: false
       });
-      await banner.show();
       console.log('[AdMob] Banner shown.');
     } catch (err) {
       console.warn('[AdMob] Banner show failed:', err);
@@ -58,48 +49,43 @@ const AdManager = (function() {
   }
 
   async function hideBanner() {
-    if (!isNativeAvailable() || !ready) return;
+    const AdMob = getAdMobPlugin();
+    if (!AdMob || !ready) return;
     try {
-      if (window.admob.BannerAd && window.admob.BannerAd.hide) {
-        await window.admob.BannerAd.hide();
-      }
+      await AdMob.hideBanner();
     } catch (err) {
       console.warn('[AdMob] Banner hide failed:', err);
     }
   }
 
-  async function loadInterstitial() {
-    if (!isNativeAvailable() || !ready) return;
+  async function prepareInterstitial() {
+    const AdMob = getAdMobPlugin();
+    if (!AdMob || !ready) return;
     try {
-      interstitial = new window.admob.InterstitialAd({ adUnitId: INTERSTITIAL_ID });
-      await interstitial.load();
-      interstitialLoaded = true;
-      console.log('[AdMob] Interstitial preloaded.');
+      await AdMob.prepareInterstitial({
+        adId: INTERSTITIAL_ID,
+        isTesting: false
+      });
+      console.log('[AdMob] Interstitial prepared.');
     } catch (err) {
-      console.warn('[AdMob] Interstitial load failed:', err);
-      interstitialLoaded = false;
+      console.warn('[AdMob] Interstitial prepare failed:', err);
     }
   }
 
   async function showInterstitial() {
-    if (!isNativeAvailable() || !ready) {
-      console.log('[AdMob] (fallback) Interstitial would show here.');
-      return;
-    }
+    const AdMob = getAdMobPlugin();
+    if (!AdMob || !ready) return;
     try {
-      if (interstitialLoaded && interstitial) {
-        await interstitial.show();
-        console.log('[AdMob] Interstitial shown.');
-      }
+      await AdMob.showInterstitial();
+      console.log('[AdMob] Interstitial shown.');
     } catch (err) {
       console.warn('[AdMob] Interstitial show failed:', err);
     } finally {
-      interstitialLoaded = false;
-      loadInterstitial(); // preload the next one
+      prepareInterstitial(); // Next ad ready rakhein
     }
   }
 
-  return { initialize, showBanner, hideBanner, loadInterstitial, showInterstitial };
+  return { initialize, showBanner, hideBanner, prepareInterstitial, showInterstitial };
 })();
 
 (function() {
@@ -267,7 +253,7 @@ const AdManager = (function() {
     const statement2 = `${names[1]} is ${trait.comp} ${names[2]}.`;
     const question = `${statement1} ${statement2} Is it certain that ${names[0]} is ${trait.comp} ${names[2]}?`;
     const options = ['Yes, definitely', 'No', 'Cannot be determined'];
-    const correct = 0; // transitive relations always make this certain
+    const correct = 0;
     return { tag: 'Logical Deduction', question, options, correct };
   }
 
@@ -305,7 +291,7 @@ const AdManager = (function() {
   let level, lives, streak, bestStreak, totalCorrect, totalAnswered;
   let currentQuestion, timer, timeLeft, questionStartTime;
   let responseTimes = [];
-  let levelsCompletedSinceAd = 0; // triggers an interstitial every 3 level-ups
+  let levelsCompletedSinceAd = 0;
 
   const startScreen = document.getElementById('start-screen');
   const quizScreen = document.getElementById('quiz-screen');
@@ -441,7 +427,7 @@ const AdManager = (function() {
       level++;
       levelsCompletedSinceAd++;
 
-      // Interstitial every 3 level completions
+      // Interstitial ad every 3 level completions
       if (levelsCompletedSinceAd >= 3) {
         levelsCompletedSinceAd = 0;
         AdManager.showInterstitial();
@@ -477,7 +463,7 @@ const AdManager = (function() {
 
     showScreen(resultScreen);
 
-    // Game Over interstitial
+    // Game Over Interstitial Ad
     AdManager.showInterstitial();
   }
 
@@ -485,10 +471,8 @@ const AdManager = (function() {
   retryBtn.addEventListener('click', () => showScreen(startScreen));
   document.querySelectorAll('.cat-card').forEach(card => card.addEventListener('click', startTest));
 
-  // Kick off AdMob (banner shows immediately and stays up through nav + gameplay)
-  document.addEventListener('deviceready', AdManager.initialize, false);
-  // Also try immediately in case there's no Cordova deviceready event (e.g. plain WebView/Capacitor)
-  window.addEventListener('load', () => {
-    if (!window.cordova) AdManager.initialize();
+  // Initialize AdMob
+  window.addEventListener('DOMContentLoaded', () => {
+    setTimeout(AdManager.initialize, 500);
   });
 })();
